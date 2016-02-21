@@ -18,9 +18,8 @@ using namespace std;
 int main() {
 
 	int counter = 0;
-	/* Create HddStat, ScreenSaver Objects */
 	PcStat ps;
-	//ps.IsNeedProgramRun();
+
 	/* Create Cycle */
 	while (true) {
 		sleep(60);
@@ -36,6 +35,10 @@ int main() {
 		if (counter == ps.timer) {
 			if (ps.IsNeedProgramRun()) {
 				/*Debug*/cout << "Need program run" << endl;
+				continue;
+			}
+			if (ps.IsMusicPlay()) {
+				/*Debug*/cout << "Music play" << endl;
 				continue;
 			}
 			counter = 0;

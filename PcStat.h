@@ -20,6 +20,7 @@ public:
 	bool ScreenSaverIsLocked();
 	bool HddIsChange();
 	bool IsNeedProgramRun();
+	bool IsMusicPlay();
 
 	int timer;
 	int program_counter;
@@ -30,6 +31,7 @@ private:
 	int parse_hdd(std::string data);
 
 	std::string programs[MAX];
+	bool music;
 };
 
 #endif /* PCSTAT_H_ */

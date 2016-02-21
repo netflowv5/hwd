@@ -18,7 +18,9 @@ using namespace std;
 
 PcStat::PcStat() {
 	old_counter = 0;
+	new_counter = 0;
 	program_counter = 0;
+	music = false;
 
 	string data;
 	ifstream stream("/home/secator/.hwdrc");
@@ -30,6 +32,7 @@ PcStat::PcStat() {
 	smatch match;
 	regex reg_timer("timer=([0-9]{1,3})");
 	regex reg_program("p=(.+)");
+	regex reg_music("music=on");
 
 	while (!stream.eof()) {
 		if (counter > MAX)
@@ -44,6 +47,11 @@ PcStat::PcStat() {
 			program_counter++;
 			continue;
 		}
+		if (regex_search(data, match, reg_music)) {
+			cout << "music on" << endl;
+			music = true;
+			continue;
+		}
 		counter++;
 	}
 	stream.close();
@@ -51,6 +59,22 @@ PcStat::PcStat() {
 
 PcStat::~PcStat() {
 	// TODO Auto-generated destructor stub
+}
+
+bool PcStat::IsMusicPlay() {
+	FILE *pipe = popen("pamon --device=2", "r");
+	if (!pipe) {
+		perror("failed");
+		return EXIT_FAILURE;
+	} else {
+		char buf[1] = "";
+		fread(&buf[0], sizeof buf[0], sizeof(buf), pipe);
+		pclose(pipe);
+		cout << "music is:" << buf << endl;
+		if (strcmp(buf, ""))
+			return true;
+	}
+	return false;
 }
 
 bool PcStat::IsNeedProgramRun() {
@@ -145,7 +169,7 @@ bool PcStat::parse_ss(string data) {
 	 //##################################################################################
 	 */
 	smatch match;
-	regex reg("locked");
+	regex reg("blanked");
 	cout << data;
 	if (regex_search(data, match, reg))
 		return true;
