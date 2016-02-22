@@ -26,9 +26,9 @@ public:
 	int program_counter;
 
 private:
-	bool parse_ss(std::string data);
+	bool parse_ss(std::string &data);
 	int old_counter, new_counter;
-	int parse_hdd(std::string data);
+	int parse_hdd(std::string &data);
 
 	std::string programs[MAX];
 	bool music;

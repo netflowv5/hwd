@@ -143,7 +143,7 @@ bool PcStat::HddIsChange() {
 	return true;
 }
 
-bool PcStat::parse_ss(string data) {
+bool PcStat::parse_ss(string &data) {
 	/*
 	 //########################### Regex for minute parse ###############################
 	 smatch str_match;
@@ -176,7 +176,7 @@ bool PcStat::parse_ss(string data) {
 	return false;
 }
 
-int PcStat::parse_hdd(string data) {
+int PcStat::parse_hdd(string &data) {
 	/* Regex data */
 	smatch str_match;
 	regex reg("[0-9]{1,20}");

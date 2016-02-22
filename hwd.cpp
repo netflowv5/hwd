@@ -6,10 +6,8 @@
 // Description : Hibernate watch dog, Ansi-style
 //============================================================================
 
+#include <stdlib.h>
 #include <iostream>
-#include <cstdio>
-#include <string>
-#include <regex>
 #include <unistd.h>
 #include "PcStat.h"
 
