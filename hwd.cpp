@@ -10,13 +10,16 @@
 #include <iostream>
 #include <unistd.h>
 #include "PcStat.h"
+#include "Logger.h"
 
 using namespace std;
 
 int main() {
 
 	int counter = 0;
-	PcStat ps;
+	Logger log("hwd"), *plog;
+	plog = &log;
+	PcStat ps(plog);
 
 	/* Create Cycle */
 	while (true) {
@@ -26,21 +29,21 @@ int main() {
 			continue;
 		}
 		if (ps.HddIsChange()) {
-			/*Debug*/cout << "change!!!";
+			log.log("main: hdd counter change", NULL);
 			counter = 0;
 			continue;
 		}
 		if (counter == ps.timer) {
 			if (ps.IsNeedProgramRun()) {
-				/*Debug*/cout << "Need program run" << endl;
+				log.log("main: need program run", NULL);
 				continue;
 			}
 			if (ps.IsMusicPlay()) {
-				/*Debug*/cout << "Music play" << endl;
+				log.log("main: music play", NULL);
 				continue;
 			}
 			counter = 0;
-			/*Debug*/cout << "Time to sleep!!!" << endl;
+			log.log("main: time to sleep!!!", NULL);
 			system("sudo pm-hibernate");
 			continue;
 		}

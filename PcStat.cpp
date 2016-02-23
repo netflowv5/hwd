@@ -16,7 +16,8 @@
 
 using namespace std;
 
-PcStat::PcStat() {
+PcStat::PcStat(Logger *log_link) {
+	log = log_link;
 	old_counter = 0;
 	new_counter = 0;
 	program_counter = 0;
@@ -25,7 +26,7 @@ PcStat::PcStat() {
 	string data;
 	ifstream stream("/home/secator/.hwdrc");
 	if (!stream) {
-		perror("Open config failed");
+		log->log("PcStat->PcStat: Open config failed", NULL);
 		exit(1);
 	}
 	int counter = 0;
@@ -48,7 +49,7 @@ PcStat::PcStat() {
 			continue;
 		}
 		if (regex_search(data, match, reg_music)) {
-			cout << "music on" << endl;
+			log->log("PcStat->PcStat: config:", "music on", NULL);
 			music = true;
 			continue;
 		}
@@ -64,13 +65,13 @@ PcStat::~PcStat() {
 bool PcStat::IsMusicPlay() {
 	FILE *pipe = popen("pamon --device=2", "r");
 	if (!pipe) {
-		perror("failed");
+		log->log("PcStat->IsMusicPlay:", "failed open pamon", NULL);
 		return EXIT_FAILURE;
 	} else {
 		char buf[1] = "";
 		fread(&buf[0], sizeof buf[0], sizeof(buf), pipe);
 		pclose(pipe);
-		cout << "music is:" << buf << endl;
+		log->log("PcStat->IsMusicPlay: Buff:", buf, NULL);
 		if (strcmp(buf, ""))
 			return true;
 	}
@@ -83,18 +84,21 @@ bool PcStat::IsNeedProgramRun() {
 	char exec_arg[64] = "";
 	for (int k = 0; k < program_counter; k++) {
 		strcpy(exec_arg, programs[k].c_str());
-		cout << exec_arg << endl;
+		log->log("PcStat->IsNeedProgramRun:", exec_arg, NULL);
 		pid = fork();
 		if (pid == 0)
 			execlp("pgrep", "pgrep", exec_arg, NULL);
 		else if (pid < 0) {
-			/*Debug*/cout << "pgrep not work" << endl;
+			log->log("PcStat->IsNeedProgramRun: pgrep exec failed", NULL);
 			return false;
 		} else
 			waitpid(pid, &status, 0);
-		/*Debug*/cout << "status:" << status << endl;
-		if (status == 0)
+		char cstatus[16] = "";
+		sprintf(cstatus, "%d", status);
+		log->log("PcStat->IsNeedProgramRun: Status:", cstatus, NULL);
+		if (status == 0) {
 			return true;
+		}
 	}
 	return false;
 }
@@ -104,7 +108,8 @@ bool PcStat::ScreenSaverIsLocked() {
 	string xscreensaver_data;
 	FILE *xscreensaver_pipe = popen("xscreensaver-command -time", "r");
 	if (!xscreensaver_pipe) {
-		perror("failed");
+		log->log("PcStat->ScreenSaverIsLocked: popen xscreensaver failed",
+		NULL);
 		return EXIT_FAILURE;
 	} else {
 		char buf[128] = "";
@@ -114,10 +119,8 @@ bool PcStat::ScreenSaverIsLocked() {
 		xscreensaver_data = buf;
 		pclose(xscreensaver_pipe);
 	}
-	if (parse_ss(xscreensaver_data)) {
+	if (parse_ss(xscreensaver_data))
 		return true;
-//		/*Debug*/cout << xscreensaver_data << endl;
-	}
 	return false;
 }
 
@@ -126,13 +129,17 @@ bool PcStat::HddIsChange() {
 	string hdd_data;
 	ifstream hdd_stream("/sys/block/sda/stat");
 	if (!hdd_stream) {
-		perror("failed");
+		log->log("PcStat->HddIsChange: open /sys/block/sda/stat failed", NULL);
 		return EXIT_FAILURE;
 	}
 	getline(hdd_stream, hdd_data, '\0');
 	hdd_stream.close();
-	new_counter = parse_hdd(hdd_data);
-	/*Debug*/cout << "counter:" << new_counter << endl;
+	smatch str_match;
+	regex reg("[0-9]{1,20}");
+	regex_search(hdd_data, str_match, reg);
+	new_counter = stoi(str_match[0]);
+	hdd_data = str_match[0];
+	log->log("PcStat->HddIsChange: counter:", hdd_data.c_str(), NULL);
 	if (old_counter == 0) {
 		old_counter = new_counter;
 		return false;
@@ -169,17 +176,9 @@ bool PcStat::parse_ss(string &data) {
 	 //##################################################################################
 	 */
 	smatch match;
-	regex reg("blanked");
+	regex reg("locked");
 	cout << data;
 	if (regex_search(data, match, reg))
 		return true;
 	return false;
-}
-
-int PcStat::parse_hdd(string &data) {
-	/* Regex data */
-	smatch str_match;
-	regex reg("[0-9]{1,20}");
-	regex_search(data, str_match, reg);
-	return stoi(str_match[0]);
 }

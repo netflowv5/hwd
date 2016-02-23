@@ -9,12 +9,13 @@
 #define PCSTAT_H_
 
 #include <string>
+#include "Logger.h"
 
 #define MAX 20
 
 class PcStat {
 public:
-	PcStat();
+	PcStat(Logger *log_link);
 	virtual ~PcStat();
 
 	bool ScreenSaverIsLocked();
@@ -28,10 +29,10 @@ public:
 private:
 	bool parse_ss(std::string &data);
 	int old_counter, new_counter;
-	int parse_hdd(std::string &data);
 
 	std::string programs[MAX];
 	bool music;
+	Logger *log;
 };
 
 #endif /* PCSTAT_H_ */
