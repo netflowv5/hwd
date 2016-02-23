@@ -15,9 +15,11 @@ public:
 	Logger(const char *data);
 	virtual ~Logger();
 
-	int log(const char *data, ...);
+	void log(const char *data, ...);
+	void init(std::string &type);
 private:
 	std::string name_of_program;
+	std::string type;
 };
 
 #endif /* LOGGER_H_ */

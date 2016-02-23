@@ -34,11 +34,18 @@ PcStat::PcStat(Logger *log_link) {
 	regex reg_timer("timer=([0-9]{1,3})");
 	regex reg_program("p=(.+)");
 	regex reg_music("music=on");
+	regex reg_config("config=(.+)");
 
 	while (!stream.eof()) {
 		if (counter > MAX)
 			break;
 		getline(stream, data, '\n');
+		if (regex_search(data, match, reg_config)){
+					string type = match[1];
+					log->init(type);
+					log->log("PcStat->Pcstat: config: config type:", type.c_str(), NULL);
+					continue;
+		}
 		if (regex_search(data, match, reg_timer)) {
 			timer = stoi(match[1]);
 			continue;
