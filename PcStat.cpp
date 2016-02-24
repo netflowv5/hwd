@@ -1,5 +1,5 @@
 /*
- * ScreenSaver.cpp
+ * Pcstat.cpp
  *
  *  Created on: 20 февр. 2016 г.
  *      Author: secator
@@ -24,7 +24,11 @@ PcStat::PcStat(Logger *log_link) {
 	music = false;
 
 	string data;
-	ifstream stream("/home/secator/.hwdrc");
+	int size = sizeof getenv("HOME");
+	char home[size + 7] = "";
+	strcpy(home, getenv("HOME"));
+	strcat(home, "/.hwdrc");
+	ifstream stream(home);
 	if (!stream) {
 		log->log("PcStat->PcStat: Open config failed", NULL);
 		exit(1);
@@ -40,14 +44,15 @@ PcStat::PcStat(Logger *log_link) {
 		if (counter > MAX)
 			break;
 		getline(stream, data, '\n');
-		if (regex_search(data, match, reg_config)){
-					string type = match[1];
-					log->init(type);
-					log->log("PcStat->Pcstat: config: config type:", type.c_str(), NULL);
-					continue;
+		if (regex_search(data, match, reg_config)) {
+			string type = match[1];
+			log->init(type);
+			log->log("PcStat->Pcstat: config: config type:", type.c_str(),
+			NULL);
+			continue;
 		}
 		if (regex_search(data, match, reg_timer)) {
-			timer = stoi(match[1]);
+			this->timer = stoi(match[1]);
 			continue;
 		}
 		if (regex_search(data, match, reg_program)) {
@@ -66,19 +71,53 @@ PcStat::PcStat(Logger *log_link) {
 }
 
 PcStat::~PcStat() {
-	// TODO Auto-generated destructor stub
+	delete log;
+	cout << "PcStat terminating..." << endl;
 }
 
+void PcStat::Main() {
+	int counter = 0;
+	while (true) {
+		sleep(60);
+		if (!this->ScreenSaverIsLocked()) {
+			counter = 0;
+			continue;
+		}
+		if (this->HddIsChange()) {
+			log->log("PcStat->Main: hdd counter change", NULL);
+			counter = 0;
+			continue;
+		}
+		if (counter == timer) {
+			if (this->IsNeedProgramRun()) {
+				log->log("PcStat->Main: need program run", NULL);
+				continue;
+			}
+			if (this->music) {
+				if (this->IsMusicPlay()) {
+					log->log("PcStat->Main: music play", NULL);
+					counter = 0;
+					continue;
+				}
+			}
+			counter = 0;
+			log->log("PcStat->Main: time to sleep!!!", NULL);
+			system("sudo pm-hibernate");
+			continue;
+		}
+		counter++;
+	}
+}
 bool PcStat::IsMusicPlay() {
 	FILE *pipe = popen("pamon --device=2", "r");
 	if (!pipe) {
 		log->log("PcStat->IsMusicPlay:", "failed open pamon", NULL);
-		return EXIT_FAILURE;
+		exit(1);
 	} else {
 		char buf[1] = "";
 		fread(&buf[0], sizeof buf[0], sizeof(buf), pipe);
 		pclose(pipe);
-		log->log("PcStat->IsMusicPlay: Buff:", buf, NULL);
+		log->log("PcStat->IsMusicPlay: Buff: |", buf, "|", NULL);
 		if (strcmp(buf, ""))
 			return true;
 	}
@@ -117,7 +156,7 @@ bool PcStat::ScreenSaverIsLocked() {
 	if (!xscreensaver_pipe) {
 		log->log("PcStat->ScreenSaverIsLocked: popen xscreensaver failed",
 		NULL);
-		return EXIT_FAILURE;
+		exit(1);
 	} else {
 		char buf[128] = "";
 		//		while(!feof(fp)){
@@ -126,7 +165,7 @@ bool PcStat::ScreenSaverIsLocked() {
 		xscreensaver_data = buf;
 		pclose(xscreensaver_pipe);
 	}
-	if (parse_ss(xscreensaver_data))
+	if (this->parse_ss(xscreensaver_data))
 		return true;
 	return false;
 }
@@ -137,7 +176,7 @@ bool PcStat::HddIsChange() {
 	ifstream hdd_stream("/sys/block/sda/stat");
 	if (!hdd_stream) {
 		log->log("PcStat->HddIsChange: open /sys/block/sda/stat failed", NULL);
-		return EXIT_FAILURE;
+		exit(1);
 	}
 	getline(hdd_stream, hdd_data, '\0');
 	hdd_stream.close();
@@ -172,7 +211,7 @@ bool PcStat::parse_ss(string &data) {
 	 Debug}
 	 } else {
 	 Debugcout << "not blanked" << endl;
-	 return EXIT_FAILURE;
+	 exit(1);
 	 }
 	 int day, hour, minute;
 	 day = stoi(str_match[1]);

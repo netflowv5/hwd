@@ -1,5 +1,5 @@
 /*
- * ScreenSaver.h
+ * PcStat.h
  *
  *  Created on: 20 февр. 2016 г.
  *      Author: secator
@@ -17,19 +17,19 @@ class PcStat {
 public:
 	PcStat(Logger *log_link);
 	virtual ~PcStat();
+	void Main();
+
+	int program_counter;
+private:
 
 	bool ScreenSaverIsLocked();
 	bool HddIsChange();
 	bool IsNeedProgramRun();
 	bool IsMusicPlay();
-
-	int timer;
-	int program_counter;
-
-private:
 	bool parse_ss(std::string &data);
 	int old_counter, new_counter;
 
+	int timer;
 	std::string programs[MAX];
 	bool music;
 	Logger *log;

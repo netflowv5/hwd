@@ -9,6 +9,7 @@
 #define LOGGER_H_
 
 #include <string>
+#include <fstream>
 
 class Logger {
 public:
@@ -20,6 +21,7 @@ public:
 private:
 	std::string name_of_program;
 	std::string type;
+	std::ofstream *stream;
 };
 
 #endif /* LOGGER_H_ */

@@ -10,6 +10,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <syslog.h>
+#include <fstream>
 
 using namespace std;
 
@@ -21,7 +22,12 @@ Logger::Logger(const char *data) {
 
 Logger::~Logger() {
 	if (type == "syslog") {
+		this->log("Logger: syslog close log", NULL);
 		closelog();
+	}
+	if (type == "file") {
+		this->log("Logger: close file.", NULL);
+		stream->close();
 	}
 }
 void Logger::init(string &type) {
@@ -29,6 +35,11 @@ void Logger::init(string &type) {
 	Logger::type = type;
 	if (type == "syslog") {
 		openlog(name_of_program.c_str(), 0, LOG_USER);
+	}
+	if (type == "file") {
+		static ofstream realstream;
+		realstream.open("/tmp/hwd.log", ofstream::app);
+		stream = &realstream;
 	}
 	log("Logger->init: hwd started", NULL);
 }
@@ -50,6 +61,16 @@ void Logger::log(const char *data, ...) {
 	}
 	if (type == "syslog") {
 		syslog(LOG_NOTICE, buffer);
+		return;
+	}
+	if (type == "file") {
+		time_t td;
+		td = time(NULL);
+		stream->write(ctime(&td), strlen(ctime(&td)) - 1);
+		stream->write(" ", sizeof(" "));
+		strcat(buffer, "\n");
+		stream->write(buffer, sizeof buffer);
+		stream->flush();
 		return;
 	}
 	cout << name_of_program << ": " << buffer << endl;

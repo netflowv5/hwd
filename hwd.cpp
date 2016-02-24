@@ -9,45 +9,50 @@
 #include <stdlib.h>
 #include <iostream>
 #include <unistd.h>
+#include <signal.h>
+#include <fcntl.h>
 #include "PcStat.h"
 #include "Logger.h"
 
 using namespace std;
 
-int main() {
+PcStat *pps;
+Logger *plog;
 
-	int counter = 0;
-	Logger log("hwd"), *plog;
-	plog = &log;
-	PcStat ps(plog);
-
-	/* Create Cycle */
-	while (true) {
-		sleep(60);
-		if (!ps.ScreenSaverIsLocked()) {
-			counter = 0;
-			continue;
-		}
-		if (ps.HddIsChange()) {
-			log.log("main: hdd counter change", NULL);
-			counter = 0;
-			continue;
-		}
-		if (counter == ps.timer) {
-			if (ps.IsNeedProgramRun()) {
-				log.log("main: need program run", NULL);
-				continue;
-			}
-			if (ps.IsMusicPlay()) {
-				log.log("main: music play", NULL);
-				continue;
-			}
-			counter = 0;
-			log.log("main: time to sleep!!!", NULL);
-			system("sudo pm-hibernate");
-			continue;
-		}
-		counter++;
-	}
-
+void signal_handler(int sig) {
+	delete pps;
+	exit(0);
 }
+
+int main(int argc, char** argv) {
+	if (argc > 1) {
+		int pid = fork();
+		if (pid == -1) {
+			cout << "Error: Start Daemon failed.";
+			return -1;
+		} else if (!pid) {
+			cout << "Demonize..." << endl;
+			close(STDIN_FILENO);
+			close(STDOUT_FILENO);
+			close(STDERR_FILENO);
+			signal(SIGHUP, signal_handler);
+			signal(SIGTERM, signal_handler);
+			int counter = 0;
+			plog = new Logger("hwd");
+			pps = new PcStat(plog);
+			pps->Main();
+			return 0;
+		} else
+			return 0;
+	} else {
+		signal(SIGINT, signal_handler);
+		signal(SIGHUP, signal_handler);
+		signal(SIGTERM, signal_handler);
+		int counter = 0;
+		plog = new Logger("hwd");
+		pps = new PcStat(plog);
+		pps->Main();
+		return 0;
+	}
+}
+
