@@ -233,7 +233,7 @@ bool PcStat::parse_ss(string &data) {
 	 //##################################################################################
 	 */
 	smatch match;
-	regex reg("d");
+	regex reg("locked");
 	cout << data;
 	if (regex_search(data, match, reg))
 		return true;
