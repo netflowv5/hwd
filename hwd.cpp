@@ -37,7 +37,6 @@ int main(int argc, char** argv) {
 			close(STDERR_FILENO);
 			signal(SIGHUP, signal_handler);
 			signal(SIGTERM, signal_handler);
-			int counter = 0;
 			plog = new Logger("hwd");
 			pps = new PcStat(plog);
 			pps->Main();
@@ -48,7 +47,6 @@ int main(int argc, char** argv) {
 		signal(SIGINT, signal_handler);
 		signal(SIGHUP, signal_handler);
 		signal(SIGTERM, signal_handler);
-		int counter = 0;
 		plog = new Logger("hwd");
 		pps = new PcStat(plog);
 		pps->Main();

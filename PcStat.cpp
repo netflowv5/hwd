@@ -13,6 +13,8 @@
 #include <fstream>
 #include <unistd.h>
 #include <sys/wait.h>
+#include "Config.h"
+#include "DynIPnotifer.h"
 
 using namespace std;
 
@@ -20,68 +22,59 @@ PcStat::PcStat(Logger *log_link) {
 	log = log_link;
 	old_counter = 0;
 	new_counter = 0;
+	timer = 5;
 	program_counter = 0;
 	music = false;
-
-	string data;
-	int size = sizeof getenv("HOME");
-	char home[size + 7] = "";
-	strcpy(home, getenv("HOME"));
-	strcat(home, "/.hwdrc");
-	ifstream stream(home);
-	if (!stream) {
-		log->log("PcStat->PcStat: Open config failed", NULL);
-		exit(1);
+	conf = new Config();
+	if (conf->GetCount("config")) {
+		string type = conf->Get("config", 0);
+		log->init(type);
 	}
-	int counter = 0;
-	smatch match;
-	regex reg_timer("timer=([0-9]{1,3})");
-	regex reg_program("p=(.+)");
-	regex reg_music("music=on");
-	regex reg_config("config=(.+)");
-
-	while (!stream.eof()) {
-		if (counter > MAX)
-			break;
-		getline(stream, data, '\n');
-		if (regex_search(data, match, reg_config)) {
-			string type = match[1];
-			log->init(type);
-			log->log("PcStat->Pcstat: config: config type:", type.c_str(),
-			NULL);
-			continue;
-		}
-		if (regex_search(data, match, reg_timer)) {
-			this->timer = stoi(match[1]);
-			continue;
-		}
-		if (regex_search(data, match, reg_program)) {
-			programs[program_counter] = match[1];
-			program_counter++;
-			continue;
-		}
-		if (regex_search(data, match, reg_music)) {
-			log->log("PcStat->PcStat: config:", "music on", NULL);
-			music = true;
-			continue;
-		}
-		counter++;
+	if (conf->GetCount("timer")) {
+		this->timer = stoi(conf->Get("timer", 0));
 	}
-	stream.close();
+	if (conf->GetCount("music")) {
+		if (conf->Get("music", 0) == "on") {
+			log->log("PcStat->PcStat: config:", "music is on", NULL);
+			this->music = true;
+		}
+	}
+	if (conf->GetCount("program")) {
+		this->programs = new string[conf->GetCount("program")];
+		for (int i = 0; i < conf->GetCount("program"); i++) {
+			this->programs[i] = conf->Get("program", i);
+			this->program_counter++;
+		}
+	}
+	if (conf->GetCount("DynIPnotifer") && conf->Get("DynIPnotifer", 0) == "on")
+		log->log("PcStat->PcStat: config:", "DynIPnotifer is on", NULL);
 }
 
 PcStat::~PcStat() {
 	delete log;
+	delete conf;
 	cout << "PcStat terminating..." << endl;
 }
 
 void PcStat::Main() {
+	DynIPnotifer notifer(conf, log);
 	int counter = 0;
 	while (true) {
+		counter++;
 		sleep(60);
 		if (!this->ScreenSaverIsLocked()) {
 			counter = 0;
 			continue;
+		}
+		if (conf->GetCount("DynIPnotifer")
+				&& conf->Get("DynIPnotifer", 0) == "on") {
+			if (this->IsSSHDrun()) {
+				log->log("PcStat->Main: DynIPnotifer is on and sshd is run.",
+				NULL);
+				notifer.Main();
+				counter = 0;
+				continue;
+			}
 		}
 		if (this->HddIsChange()) {
 			log->log("PcStat->Main: hdd counter change", NULL);
@@ -105,16 +98,16 @@ void PcStat::Main() {
 			system("sudo pm-hibernate");
 			continue;
 		}
-		counter++;
 	}
 }
+
 bool PcStat::IsMusicPlay() {
 	FILE *pipe = popen("pamon --device=2", "r");
 	if (!pipe) {
 		log->log("PcStat->IsMusicPlay:", "failed open pamon", NULL);
 		exit(1);
 	} else {
-		char buf[1] = "";
+		char buf[16] = "";
 		fread(&buf[0], sizeof buf[0], sizeof(buf), pipe);
 		pclose(pipe);
 		log->log("PcStat->IsMusicPlay: Buff: |", buf, "|", NULL);
@@ -127,7 +120,7 @@ bool PcStat::IsMusicPlay() {
 bool PcStat::IsNeedProgramRun() {
 	int status = -1;
 	pid_t pid;
-	char exec_arg[64] = "";
+	char exec_arg[32] = "";
 	for (int k = 0; k < program_counter; k++) {
 		strcpy(exec_arg, programs[k].c_str());
 		log->log("PcStat->IsNeedProgramRun:", exec_arg, NULL);
@@ -149,8 +142,27 @@ bool PcStat::IsNeedProgramRun() {
 	return false;
 }
 
+bool PcStat::IsSSHDrun() {
+	int status = -1;
+	pid_t pid;
+	pid = fork();
+	if (pid == 0)
+		execlp("pgrep", "pgrep", "sshd", NULL);
+	else if (pid < 0) {
+		log->log("PcStat->IsSSHDrun: pgrep exec failed", NULL);
+		return false;
+	} else
+		waitpid(pid, &status, 0);
+	char cstatus[16] = "";
+	sprintf(cstatus, "%d", status);
+	log->log("PcStat->IsSSHDrun: Status:", cstatus, NULL);
+	if (status == 0) {
+		return true;
+	}
+	return false;
+}
+
 bool PcStat::ScreenSaverIsLocked() {
-	/* Read data from xscreensaver pipe */
 	string xscreensaver_data;
 	FILE *xscreensaver_pipe = popen("xscreensaver-command -time", "r");
 	if (!xscreensaver_pipe) {
@@ -171,7 +183,6 @@ bool PcStat::ScreenSaverIsLocked() {
 }
 
 bool PcStat::HddIsChange() {
-	/* Read hdd stats */
 	string hdd_data;
 	ifstream hdd_stream("/sys/block/sda/stat");
 	if (!hdd_stream) {
@@ -222,7 +233,7 @@ bool PcStat::parse_ss(string &data) {
 	 //##################################################################################
 	 */
 	smatch match;
-	regex reg("locked");
+	regex reg("d");
 	cout << data;
 	if (regex_search(data, match, reg))
 		return true;

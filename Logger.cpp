@@ -67,9 +67,9 @@ void Logger::log(const char *data, ...) {
 		time_t td;
 		td = time(NULL);
 		stream->write(ctime(&td), strlen(ctime(&td)) - 1);
-		stream->write(" ", sizeof(" "));
+		stream->write(" ", strlen(" "));
 		strcat(buffer, "\n");
-		stream->write(buffer, sizeof buffer);
+		stream->write(buffer, strlen(buffer));
 		stream->flush();
 		return;
 	}

@@ -10,8 +10,7 @@
 
 #include <string>
 #include "Logger.h"
-
-#define MAX 20
+#include "Config.h"
 
 class PcStat {
 public:
@@ -19,20 +18,20 @@ public:
 	virtual ~PcStat();
 	void Main();
 
-	int program_counter;
 private:
-
 	bool ScreenSaverIsLocked();
 	bool HddIsChange();
 	bool IsNeedProgramRun();
 	bool IsMusicPlay();
+	bool IsSSHDrun();
 	bool parse_ss(std::string &data);
-	int old_counter, new_counter;
 
-	int timer;
-	std::string programs[MAX];
+	int old_counter, new_counter, program_counter, timer;
+	//std::string programs[MAX];
+	std::string *programs;
 	bool music;
 	Logger *log;
+	Config *conf;
 };
 
 #endif /* PCSTAT_H_ */
