@@ -24,8 +24,8 @@ PcStat::PcStat(Logger *log_link) {
 	new_counter = 0;
 	program_counter = 0;
 	conf = new Config();
-	if (conf->GetCount("config")) {
-		string type = conf->Get("config", 0);
+	if (conf->GetCount("log")) {
+		string type = conf->Get("log", 0);
 		log->init(type);
 	}
 	if (conf->GetCount("timer")) {

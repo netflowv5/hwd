@@ -1,6 +1,6 @@
 [main section]
 timer=10
-config=file
+log=file
 
 [music section]
 music=on
