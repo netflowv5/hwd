@@ -22,9 +22,7 @@ PcStat::PcStat(Logger *log_link) {
 	log = log_link;
 	old_counter = 0;
 	new_counter = 0;
-	timer = 5;
 	program_counter = 0;
-	music = false;
 	conf = new Config();
 	if (conf->GetCount("config")) {
 		string type = conf->Get("config", 0);
@@ -32,13 +30,15 @@ PcStat::PcStat(Logger *log_link) {
 	}
 	if (conf->GetCount("timer")) {
 		this->timer = stoi(conf->Get("timer", 0));
-	}
+	} else
+		timer = 5;
 	if (conf->GetCount("music")) {
 		if (conf->Get("music", 0) == "on") {
 			log->log("PcStat->PcStat: config:", "music is on", NULL);
 			this->music = true;
 		}
-	}
+	} else
+		music = false;
 	if (conf->GetCount("program")) {
 		this->programs = new string[conf->GetCount("program")];
 		for (int i = 0; i < conf->GetCount("program"); i++) {
@@ -48,6 +48,10 @@ PcStat::PcStat(Logger *log_link) {
 	}
 	if (conf->GetCount("DynIPnotifer") && conf->Get("DynIPnotifer", 0) == "on")
 		log->log("PcStat->PcStat: config:", "DynIPnotifer is on", NULL);
+	if (conf->GetCount("xscreensaver")) {
+		this->xscreensaver = conf->Get("xscreensaver", 0);
+	} else
+		this->xscreensaver = "locked";
 }
 
 PcStat::~PcStat() {
@@ -105,7 +109,7 @@ bool PcStat::IsMusicPlay() {
 	FILE *pipe = popen("pamon --device=2", "r");
 	if (!pipe) {
 		log->log("PcStat->IsMusicPlay:", "failed open pamon", NULL);
-		exit(1);
+		return false;
 	} else {
 		char buf[16] = "";
 		fread(&buf[0], sizeof buf[0], sizeof(buf), pipe);
@@ -177,7 +181,9 @@ bool PcStat::ScreenSaverIsLocked() {
 		xscreensaver_data = buf;
 		pclose(xscreensaver_pipe);
 	}
-	if (this->parse_ss(xscreensaver_data))
+	smatch match;
+	regex reg(this->xscreensaver);
+	if (regex_search(xscreensaver_data, match, reg))
 		return true;
 	return false;
 }
@@ -205,37 +211,4 @@ bool PcStat::HddIsChange() {
 		return false;
 	old_counter = 0;
 	return true;
-}
-
-bool PcStat::parse_ss(string &data) {
-	/*
-	 //########################### Regex for minute parse ###############################
-	 smatch str_match;
-	 regex reg("n blanked.+"
-	 "([0-9]{2}) "
-	 "([0-9]{2})"
-	 ":([0-9]{2})");
-	 if (regex_search(data, str_match, reg)) {
-	 Debugcout << "finded:" << str_match.size() << endl;
-	 Debugfor (size_t i = 0; i < str_match.size(); i++) {
-	 Debugcout << str_match[i] << endl;
-	 Debug}
-	 } else {
-	 Debugcout << "not blanked" << endl;
-	 exit(1);
-	 }
-	 int day, hour, minute;
-	 day = stoi(str_match[1]);
-	 hour = stoi(str_match[2]);
-	 minute = stoi(str_match[3]);
-	 Debugcout << "int day:" << day << " int hour:" << hour << " int minute:"
-	 << minute << endl;
-	 //##################################################################################
-	 */
-	smatch match;
-	regex reg("locked");
-	cout << data;
-	if (regex_search(data, match, reg))
-		return true;
-	return false;
 }

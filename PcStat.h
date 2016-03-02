@@ -24,11 +24,10 @@ private:
 	bool IsNeedProgramRun();
 	bool IsMusicPlay();
 	bool IsSSHDrun();
-	bool parse_ss(std::string &data);
 
 	int old_counter, new_counter, program_counter, timer;
-	//std::string programs[MAX];
 	std::string *programs;
+	std::string xscreensaver;
 	bool music;
 	Logger *log;
 	Config *conf;
