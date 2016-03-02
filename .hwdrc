@@ -1,0 +1,22 @@
+[main section]
+timer=10
+config=file
+
+[music section]
+music=on
+
+[program section]
+program=emerge
+program=make
+
+[DynIPnotifer section]
+DynIPnotifer=on
+getiptimer=10
+getip=http://ip-detect.ru/
+smtp=smtp.server.ru
+to=example@mail.com
+from=example@mail.com
+password=xxxxx
+
+[xscreensaver]
+xscreensaver=locked
