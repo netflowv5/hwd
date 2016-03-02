@@ -55,6 +55,7 @@ PcStat::PcStat(Logger *log_link) {
 }
 
 PcStat::~PcStat() {
+	delete[] programs;
 	delete log;
 	delete conf;
 	cout << "PcStat terminating..." << endl;
