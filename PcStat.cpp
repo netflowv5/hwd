@@ -18,16 +18,12 @@
 
 using namespace std;
 
-PcStat::PcStat(Logger *log_link) {
-	log = log_link;
+PcStat::PcStat(Logger *log_pointer, Config *config_pointer) {
+	this->log = log_pointer;
+	this->conf = config_pointer;
 	old_counter = 0;
 	new_counter = 0;
 	program_counter = 0;
-	conf = new Config();
-	if (conf->GetCount("log")) {
-		string type = conf->Get("log", 0);
-		log->init(type);
-	}
 	if (conf->GetCount("timer")) {
 		this->timer = stoi(conf->Get("timer", 0));
 	} else

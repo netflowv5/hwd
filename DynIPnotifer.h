@@ -8,7 +8,6 @@
 #ifndef DYNIPNOTIFER_H_
 #define DYNIPNOTIFER_H_
 
-#include <cstdio>
 #include <string>
 #include "Config.h"
 #include "Logger.h"

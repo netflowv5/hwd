@@ -10,14 +10,14 @@
 
 #include <string>
 #include <fstream>
+#include "Config.h"
 
 class Logger {
 public:
-	Logger(const char *data);
+	Logger(const char *data, Config *config_pointer);
 	virtual ~Logger();
 
 	void log(const char *data, ...);
-	void init(std::string &type);
 private:
 	std::string name_of_program;
 	std::string type;

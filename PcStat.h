@@ -14,7 +14,7 @@
 
 class PcStat {
 public:
-	PcStat(Logger *log_link);
+	PcStat(Logger *log_pointer, Config *config_pointer);
 	virtual ~PcStat();
 	void Main();
 

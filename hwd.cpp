@@ -6,7 +6,6 @@
 // Description : Hibernate watch dog, Ansi-style
 //============================================================================
 
-#include <stdlib.h>
 #include <iostream>
 #include <unistd.h>
 #include <signal.h>
@@ -14,11 +13,11 @@
 #include <cstring>
 #include "PcStat.h"
 #include "Logger.h"
+#include "Config.h"
 
 using namespace std;
 
 PcStat *pps;
-Logger *plog;
 
 void signal_handler(int sig) {
 	delete pps;
@@ -39,8 +38,9 @@ int main(int argc, char* argv[]) {
 				close(STDERR_FILENO);
 				signal(SIGHUP, signal_handler);
 				signal(SIGTERM, signal_handler);
-				plog = new Logger("hwd");
-				pps = new PcStat(plog);
+				Config *pconf = new Config;
+				Logger *plog = new Logger("hwd", pconf);
+				pps = new PcStat(plog, pconf);
 				pps->Main();
 				return 0;
 			} else
@@ -51,8 +51,9 @@ int main(int argc, char* argv[]) {
 		signal(SIGINT, signal_handler);
 		signal(SIGHUP, signal_handler);
 		signal(SIGTERM, signal_handler);
-		plog = new Logger("hwd");
-		pps = new PcStat(plog);
+		Config *pconf = new Config;
+		Logger *plog = new Logger("hwd", pconf);
+		pps = new PcStat(plog, pconf);
 		pps->Main();
 		return 0;
 	}

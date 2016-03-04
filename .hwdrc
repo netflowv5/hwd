@@ -1,6 +1,7 @@
 [main section]
 timer=10
 log=file
+logfile=/tmp/hwd.log
 
 [music section]
 music=on

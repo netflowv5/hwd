@@ -6,12 +6,9 @@
  */
 
 #include "DynIPnotifer.h"
-#include <cstdio>
-#include <cstring>
 #include <string>
 #include <iostream>
 #include <regex>
-#include <unistd.h>
 #include <Poco/Net/HTTPClientSession.h>
 #include <Poco/Net/HTTPRequest.h>
 #include <Poco/Net/HTTPResponse.h>

@@ -8,16 +8,40 @@
 #include "Logger.h"
 #include <iostream>
 #include <stdarg.h>
-#include <string.h>
+#include <cstring>
 #include <syslog.h>
 #include <fstream>
+#include "Config.h"
 
 using namespace std;
 
-Logger::Logger(const char *data) {
+Logger::Logger(const char *data, Config *config_pointer) {
 	cout << "Logger instance created. Name of uses program is " << data << "."
 			<< endl;
 	name_of_program = data;
+	if (config_pointer->GetCount("log")) {
+		this->type = config_pointer->Get("log", 0);
+		cout << "Logger switch out to: " << this->type << "." << endl;
+		if (this->type == "syslog") {
+			openlog(name_of_program.c_str(), 0, LOG_USER);
+		}
+		if (this->type == "file") {
+			static ofstream realstream;
+			string path = "/tmp/hwd.log";
+			if (config_pointer->GetCount("logfile")) {
+				path = config_pointer->Get("logfile", 0);
+			}
+			realstream.open(path.c_str(), ofstream::app);
+			if (!realstream) {
+				this->type = "stdout";
+				this->log(
+						"Logger->init: can't open log file, switched to stdout.",
+						NULL);
+			} else
+				stream = &realstream;
+		}
+		this->log("Logger->init: hwd started", NULL);
+	}
 }
 
 Logger::~Logger() {
@@ -29,19 +53,6 @@ Logger::~Logger() {
 		this->log("Logger: close file.", NULL);
 		stream->close();
 	}
-}
-void Logger::init(string &type) {
-	cout << "Logger switch out to: " << type << "." << endl;
-	Logger::type = type;
-	if (type == "syslog") {
-		openlog(name_of_program.c_str(), 0, LOG_USER);
-	}
-	if (type == "file") {
-		static ofstream realstream;
-		realstream.open("/tmp/hwd.log", ofstream::app);
-		stream = &realstream;
-	}
-	log("Logger->init: hwd started", NULL);
 }
 
 void Logger::log(const char *data, ...) {
