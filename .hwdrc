@@ -5,6 +5,7 @@ logfile=/tmp/hwd.log
 
 [music section]
 music=on
+device=2
 
 [program section]
 program=emerge

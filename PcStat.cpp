@@ -103,7 +103,13 @@ void PcStat::Main() {
 }
 
 bool PcStat::IsMusicPlay() {
-	FILE *pipe = popen("pamon --device=2", "r");
+	int size = sizeof "pamon --device=";
+	char file[size + 1] = "pamon --device=";
+	if (conf->GetCount("device"))
+		strcat(file, conf->Get("device", 0).c_str());
+	else
+		strcat(file, "0");
+	FILE *pipe = popen(file, "r");
 	if (!pipe) {
 		log->log("PcStat->IsMusicPlay:", "failed open pamon", NULL);
 		return false;
