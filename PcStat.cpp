@@ -85,6 +85,7 @@ void PcStat::Main() {
 		if (counter == timer) {
 			if (this->IsNeedProgramRun()) {
 				log->log("PcStat->Main: need program run", NULL);
+				counter = 0;
 				continue;
 			}
 			if (this->music) {
@@ -125,46 +126,41 @@ bool PcStat::IsMusicPlay() {
 }
 
 bool PcStat::IsNeedProgramRun() {
-	int status = -1;
-	pid_t pid;
-	char exec_arg[32] = "";
 	for (int k = 0; k < program_counter; k++) {
-		strcpy(exec_arg, programs[k].c_str());
-		log->log("PcStat->IsNeedProgramRun:", exec_arg, NULL);
-		pid = fork();
-		if (pid == 0)
-			execlp("pgrep", "pgrep", exec_arg, NULL);
-		else if (pid < 0) {
-			log->log("PcStat->IsNeedProgramRun: pgrep exec failed", NULL);
+		char file[64] = "pgrep ";
+		strcat(file, programs[k].c_str());
+		FILE *pipe = popen(file, "r");
+		if (!pipe) {
+			log->log("PcStat->IsNeedProgramRun:", "failed open pgrep", NULL);
 			return false;
-		} else
-			waitpid(pid, &status, 0);
-		char cstatus[16] = "";
-		sprintf(cstatus, "%d", status);
-		log->log("PcStat->IsNeedProgramRun: Status:", cstatus, NULL);
-		if (status == 0) {
-			return true;
+		} else {
+			char buf[16] = "";
+			fread(&buf[0], sizeof buf[0], sizeof(buf), pipe);
+			pclose(pipe);
+			log->log("PcStat->IsNeedProgramRun: pid:", buf, NULL);
+			if (!strcmp(buf, ""))
+				continue;
+			else
+				return true;
 		}
+		return false;
 	}
 	return false;
 }
 
 bool PcStat::IsSSHDrun() {
-	int status = -1;
-	pid_t pid;
-	pid = fork();
-	if (pid == 0)
-		execlp("pgrep", "pgrep", "sshd", NULL);
-	else if (pid < 0) {
-		log->log("PcStat->IsSSHDrun: pgrep exec failed", NULL);
+	char file[] = "pgrep sshd";
+	FILE *pipe = popen(file, "r");
+	if (!pipe) {
+		log->log("PcStat->IsSSHDrun:", "failed open pgrep", NULL);
 		return false;
-	} else
-		waitpid(pid, &status, 0);
-	char cstatus[16] = "";
-	sprintf(cstatus, "%d", status);
-	log->log("PcStat->IsSSHDrun: Status:", cstatus, NULL);
-	if (status == 0) {
-		return true;
+	} else {
+		char buf[16] = "";
+		fread(&buf[0], sizeof buf[0], sizeof(buf), pipe);
+		pclose(pipe);
+		log->log("PcStat->IsSSHDrun: pid:", buf, NULL);
+		if (strcmp(buf, ""))
+			return true;
 	}
 	return false;
 }
